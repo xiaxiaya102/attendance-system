@@ -1,0 +1,574 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>考勤加班计算系统</title>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;500;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #1a73e8;
+            --secondary-color: #4285f4;
+            --success-color: #0f9d58;
+            --warning-color: #f4b400;
+            --error-color: #db4437;
+            --text-primary: #202124;
+            --text-secondary: #5f6368;
+            --background-light: #f8f9fa;
+            --border-color: #dadce0;
+            --shadow-color: rgba(0, 0, 0, 0.1);
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Noto Sans SC', -apple-system, BlinkMacSystemFont, sans-serif;
+            line-height: 1.6;
+            color: var(--text-primary);
+            background: linear-gradient(135deg, #f5f7fa 0%, #e4e8eb 100%);
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1250px;
+            margin: 2rem auto;
+            padding: 0 1rem;
+        }
+
+        .app-header {
+            text-align: center;
+        }
+
+        .app-title {
+            font-size: 2.5rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+            font-weight: 700;
+        }
+
+        .app-subtitle {
+            color: var(--text-secondary);
+            font-size: 1.1rem;
+        }
+
+        .upload-section {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            margin-bottom: 2rem;
+            text-align: center;
+        }
+
+        .file-upload {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 1.5rem;
+            padding: 2rem;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            margin-bottom: 1.5rem;
+            transition: all 0.3s ease;
+        }
+
+        .file-upload:hover {
+            border-color: var(--primary-color);
+            background-color: var(--background-light);
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .file-label {
+            display: inline-block;
+            padding: 0.8rem 1.5rem;
+            background-color: var(--primary-color);
+            color: white;
+            border-radius: 6px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .file-label:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-1px);
+        }
+
+        .dormitory-setting {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 1rem;
+            margin: 1.5rem 0;
+        }
+
+        .switch {
+            position: relative;
+            display: inline-block;
+            width: 52px;
+            height: 28px;
+        }
+
+        .switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #ccc;
+            transition: .4s;
+            border-radius: 28px;
+        }
+
+        .slider:before {
+            position: absolute;
+            content: "";
+            height: 20px;
+            width: 20px;
+            left: 4px;
+            bottom: 4px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .slider {
+            background-color: var(--success-color);
+        }
+
+        input:checked + .slider:before {
+            transform: translateX(24px);
+        }
+
+        .setting-label {
+            font-size: 1rem;
+            color: var(--text-secondary);
+            cursor: pointer;
+        }
+
+        .submit-btn {
+            background-color: var(--primary-color);
+            color: white;
+            border: none;
+            padding: 0.8rem 2rem;
+            border-radius: 6px;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.3s ease;
+        }
+
+        .submit-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-1px);
+            box-shadow: 0 2px 4px var(--shadow-color);
+        }
+
+        .error {
+            color: var(--error-color);
+            margin-top: 1rem;
+            font-size: 0.9rem;
+        }
+
+        .results-section {
+            display: grid;
+            gap: 2rem;
+            margin-top: 2rem;
+        }
+
+        .card {
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 6px var(--shadow-color);
+            overflow: hidden;
+            transition: all 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 12px var(--shadow-color);
+        }
+
+        .card-header {
+            padding: 1.5rem;
+            background-color: var(--background-light);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .card-title {
+            font-size: 1.25rem;
+            color: var(--primary-color);
+            margin: 0;
+        }
+
+        .table-container {
+            overflow-x: auto;
+            padding: 1rem;
+            -webkit-overflow-scrolling: touch;
+        }
+
+        .results-table {
+            width: 100%;
+            border-collapse: separate;
+            border-spacing: 0;
+            margin-bottom: 1rem;
+            min-width: 800px;
+        }
+
+        /* 表格基础样式 */
+        .results-table th,
+        .results-table td {
+            padding: 1rem;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        /* 名字列样式（居中） */
+        .results-table td:first-child {
+            white-space: nowrap;
+            min-width: 4.5em;
+            text-align: center;
+        }
+
+        /* 日期列样式（居中） */
+        .results-table td:has(.badge) {
+            text-align: center;
+            white-space: nowrap;
+        }
+
+        /* 数字列样式（居中） */
+        .results-table td.highlight {
+            text-align: center;
+            white-space: nowrap;
+            padding-right: 2rem;  /* 增加右侧padding，使数字不会贴边 */
+        }
+
+        /* 表头样式 */
+        .results-table th {
+            background-color: var(--background-light);
+            font-weight: 500;
+            color: var(--text-secondary);
+            position: sticky;
+            top: 0;
+            z-index: 1;
+            text-align: center;  /* 默认右对齐 */
+        }
+
+        /* 文本列的表头左对齐 */
+        .results-table th:first-child,
+        .results-table th:nth-child(2) {
+            text-align: center;
+            padding-right: 1rem;
+        }
+
+        .results-table tr:hover td {
+            background-color: var(--background-light);
+        }
+
+        .highlight {
+            color: var(--primary-color);
+            font-weight: 500;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 1rem;
+            font-size: 0.85rem;
+            font-weight: 500;
+            margin-left: 0.5rem;
+        }
+
+        .badge-workday {
+            background-color: var(--primary-color);
+            color: white;
+        }
+
+        .badge-weekend {
+            background-color: var(--warning-color);
+            color: white;
+        }
+
+        .instructions {
+            background: white;
+            border-radius: 12px;
+            padding: 2rem;
+            margin-top: 2rem;
+            box-shadow: 0 4px 6px var(--shadow-color);
+        }
+
+        .instructions h3 {
+            color: var(--primary-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .instructions ol {
+            padding-left: 1.5rem;
+        }
+
+        .instructions li {
+            margin-bottom: 1rem;
+        }
+
+        .instructions ul {
+            padding-left: 1.5rem;
+            margin: 0.5rem 0;
+        }
+
+        .instructions ul li {
+            margin-bottom: 0.5rem;
+            color: var(--text-secondary);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 1rem auto;
+            }
+
+            .app-title {
+                font-size: 2rem;
+            }
+
+            .card {
+                margin-bottom: 1rem;
+            }
+
+            .table-container {
+                margin: 0 -1rem;
+                padding: 0;
+            }
+            
+            .results-table th,
+            .results-table td {
+                padding: 0.75rem;
+            }
+            
+            .results-table td.highlight,
+            .results-table th {
+                padding-right: 1rem;
+            }
+        }
+
+        /* 添加文件名显示 */
+        .file-name {
+            margin-top: 0.5rem;
+            color: var(--text-secondary);
+            font-size: 0.9rem;
+        }
+
+        /* 添加上传图标 */
+        .upload-icon {
+            font-size: 2rem;
+            color: var(--primary-color);
+            margin-bottom: 1rem;
+        }
+
+        /* 添加加载动画 */
+        .loading {
+            display: none;
+            margin: 1rem auto;
+        }
+
+        .loading.active {
+            display: block;
+        }
+
+        .spinner {
+            width: 40px;
+            height: 40px;
+            border: 4px solid var(--background-light);
+            border-top: 4px solid var(--primary-color);
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header class="app-header">
+            <h1 class="app-title">考勤加班计算系统</h1>
+        </header>
+
+        <div class="upload-section">
+            <form action="{{ url_for('attendance.upload', _external=True, _scheme='http') }}" method="post" enctype="multipart/form-data" id="uploadForm">
+                <div class="file-upload">
+                    <div class="upload-icon">📊</div>
+                    <input type="file" name="file" id="file" class="file-input" accept=".xlsx">
+                    <label for="file" class="file-label">选择Excel文件</label>
+                    <div class="file-name" id="fileName"></div>
+                </div>
+
+                <div class="dormitory-setting">
+                    <label class="switch">
+                        <input type="checkbox" name="is_dormitory" id="is_dormitory">
+                        <span class="slider"></span>
+                    </label>
+                    <label for="is_dormitory" class="setting-label">是否住寝室</label>
+                </div>
+
+                <button type="submit" class="submit-btn">开始计算</button>
+                
+                <div class="loading" id="loading">
+                    <div class="spinner"></div>
+                </div>
+            </form>
+            {% if error %}
+            <p class="error">{{ error }}</p>
+            {% endif %}
+        </div>
+
+        {% if results %}
+        <div class="results-section">
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">加班统计汇总</h2>
+                </div>
+                <div class="table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">姓名</th>
+                                <th>总加班时长（小时）</th>
+                                <th>每日平均工时（小时）</th>
+                                <th>每日平均加班时长（小时）</th>
+                                <th>总餐补（元）</th>
+                                <th>总交通补贴（元）</th>
+                                <th>打卡天数</th>
+                                <th>打卡次数</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in results.summary %}
+                            <tr>
+                                <td style="text-align: left;">{{ row.姓名 }}</td>
+                                <td class="highlight">{{ "%.2f"|format(row.总加班时长) }}</td>
+                                <td class="highlight">{{ "%.2f"|format(row.每日平均工时) }}</td>
+                                <td class="highlight">{{ "%.2f"|format(row.每日平均加班时长) }}</td>
+                                <td class="highlight">{{ row.总餐补 }}</td>
+                                <td class="highlight">{{ row.总交通补贴 }}</td>
+                                <td class="highlight">{{ row.打卡天数 }}</td>
+                                <td class="highlight">{{ row.打卡次数 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <div class="card">
+                <div class="card-header">
+                    <h2 class="card-title">每日加班明细</h2>
+                </div>
+                <div class="table-container">
+                    <table class="results-table">
+                        <thead>
+                            <tr>
+                                <th style="text-align: left;">日期</th>
+                                <th>加班时长（小时）</th>
+                                <th>餐补（元）</th>
+                                <th>交通补贴（元）</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for row in results.daily_details %}
+                            <tr>
+                                <td style="text-align: left;">
+                                    {{ row.日期 }}
+                                    {% if "星期六" in row.日期 or "星期日" in row.日期 %}
+                                    <span class="badge badge-weekend">休息日</span>
+                                    {% else %}
+                                    <span class="badge badge-workday">工作日</span>
+                                    {% endif %}
+                                </td>
+                                <td class="highlight">{{ "%.2f"|format(row.加班时长) }}</td>
+                                <td class="highlight">{{ row.餐补 }}</td>
+                                <td class="highlight">{{ row.交通补贴 }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="instructions">
+            <h3>使用说明</h3>
+            <ol>
+                <li>
+                    <strong>文件要求</strong>
+                    <ul>
+                        <li>请上传Excel格式的考勤数据文件（.xlsx）</li>
+                        <li>系统将自动读取第二个sheet的数据（从第三行开始）</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>工作日规则</strong>
+                    <ul>
+                        <li>正常工作时间：8:30-12:00，13:30-18:00</li>
+                        <li>18:00后视为加班时间</li>
+                        <li>每天扣除0.5小时无效时间</li>
+                    </ul>
+                </li>
+                <li>
+                    <strong>补贴规则</strong>
+                    <ul>
+                        <li>工作日补贴：
+                            <ul>
+                                <li>周一至周四：20:00后补贴10元餐补，21:00后再补贴10元</li>
+                                <li>周五：18:00后必定补贴10元餐补，21:00后再补贴10元</li>
+                                <li>21:00后：补贴10元交通费（住寝室员工除外）</li>
+                            </ul>
+                        </li>
+                        <li>休息日补贴：
+                            <ul>
+                                <li>加班满4小时：补贴10元餐补</li>
+                                <li>加班满8小时：再补贴10元餐补</li>
+                                <li>21:00后：补贴10元交通费（住寝室员工除外）</li>
+                            </ul>
+                        </li>
+                    </ul>
+                </li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // 显示选择的文件名
+        document.getElementById('file').addEventListener('change', function(e) {
+            const fileName = e.target.files[0]?.name || '未选择文件';
+            document.getElementById('fileName').textContent = fileName;
+        });
+
+        // 表单提交时显示加载动画
+        document.getElementById('uploadForm').addEventListener('submit', function(e) {
+            // 检查是否选择了文件
+            const fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
+                e.preventDefault();
+                document.querySelector('.error').textContent = '请选择文件';
+                return;
+            }
+            
+            // 显示加载动画
+            document.getElementById('loading').classList.add('active');
+        });
+    </script>
+</body>
+</html> 

@@ -88,11 +88,11 @@ def calculate_overtime_and_allowance(row, df, is_dormitory=False):
             # 工作日加班计算
             if time >= datetime.strptime('18:00', '%H:%M').time():
                 end_time = datetime_combined
-                start_time = datetime.combine(date, datetime.strptime('18:00', '%H:%M').time())
+                start_time = datetime.combine(date, datetime.strptime('18:30', '%H:%M').time())
                 overtime = (end_time - start_time).total_seconds() / 3600
                 
                 # 每天扣除0.5小时无效时间
-                overtime = max(0, overtime - 0.5)
+                overtime = max(0, int(overtime - 0.5))
                 
                 # 计算补贴
                 # 获取当天该员工的所有晚上加班记录
